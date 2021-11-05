@@ -252,6 +252,8 @@
     error = 0
     call CAMB_GetResults(State, Params, error, onlytransfer, onlytimesources)
 
+    State%CLData%Cl_lensed = State%CLData%Cl_lensed*Params%beta2_0
+
     end function CAMBdata_GetTransfers
 
     function CAMBdata_CalcBackgroundTheory(State, P) result(error)
