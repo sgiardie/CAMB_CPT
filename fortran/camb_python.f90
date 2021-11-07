@@ -248,11 +248,192 @@
     type(CAMBparams) :: Params
     logical :: onlytransfer, onlytimesources
     integer :: error
+    
+    !!ML 
+    integer :: lmin_AF, lmax_AF, l
+    real(dl) :: prefac_dl2cl, prefac_cl2dl
+    real(dl) :: currclEE, currclTE, currclBB, currclEE_m1, currclBB_m1, currclEE_p1, currclBB_p1
+    real(dl), dimension(:), allocatable :: newCl_E, newCl_TE, newCl_B, CLBB
+    real(dl) :: K11, K22_p1, K22_m1
+    logical :: check_lminAF = .false.
+    logical :: check_lmaxAF = .false.
+    !!ML
 
+    
     error = 0
     call CAMB_GetResults(State, Params, error, onlytransfer, onlytimesources)
 
-    State%CLData%Cl_lensed = State%CLData%Cl_lensed*Params%beta2_0
+    !!ML
+    lmin_AF = 2
+    lmax_AF = 500 !!ML we should put them not as hardcoded parameters 
+
+    if (State%CP%WantTensors .and. lmin_AF < State%CP%Max_l_tensor) then
+        check_lminAF = .true.
+    else if (State%CP%WantScalars .and. lmin_AF < State%CP%Max_l) then
+        if (State%CP%DoLensing) then
+                if (lmin_AF<State%CLData%lmax_lensed) check_lminAF = .true.
+        else
+           check_lminAF = .true.
+        end if     
+    else
+        write(*,*) 'Warning:The lmin for rotating the spectra is grater than the lmax up to which the spectra are computed!'
+        write(*,*) 'The program will not be stopped but the spectra will be not rotated.'
+    end if
+
+
+    if (State%CP%WantTensors .and. lmax_AF > State%CP%Max_l_tensor) then
+        lmax_AF = State%CP%Max_l_tensor
+        check_lmaxAF = .false.
+    else if (State%CP%WantScalars .and. lmax_AF > State%CP%Max_l) then
+        if (State%CP%DoLensing) then
+                if (lmax_AF > State%CLData%lmax_lensed) then
+                    lmax_AF = State%CLData%lmax_lensed
+                    check_lmaxAF = .false.
+                end if
+        else
+            lmax_AF = State%CP%Max_l
+            check_lmaxAF = .false.
+        end if
+    else
+        check_lmaxAF = .true.
+    end if
+
+    if (.not. check_lmaxAF) then        
+        write(*,*) 'Warning:The max for rotating the spectra is grater than the lmax up to which the spectra are computed!'
+        write(*,*) 'The program will not be stopped but the spectra will be rotated up to a lower lmax.'
+    end if
+
+    if (check_lminAF) then
+
+        allocate(newCl_E(lmin_AF:lmax_AF))
+        newCl_E = 0
+
+        allocate(newCl_B(lmin_AF:lmax_AF))
+        newCl_B = 0            
+
+        allocate(newCl_TE(lmin_AF:lmax_AF))
+        newCl_TE = 0
+
+        if (lmax_AF<= State%CP%Max_l_tensor) then
+            allocate(CLBB(lmin_AF-1:lmax_AF+1))
+            CLBB = 0
+            CLBB(lmin_AF-1:lmax_AF+1) = State%CLData%Cl_tensor(lmin_AF-1:lmax_AF+1,CT_B)
+        else
+            allocate(CLBB(lmin_AF-1:State%CP%Max_l_tensor))
+            CLBB = 0
+            CLBB(lmin_AF-1:State%CP%Max_l_tensor) = State%CLData%Cl_tensor(lmin_AF-1:State%CP%Max_l_tensor,CT_B)
+        end if
+
+
+        do l = lmin_AF, lmax_AF, 1
+
+            K11 = 4.0/(l*l+l)
+            K22_m1 = (l*l - 4.0)/(l*(1.0+2.0*l))
+            K22_p1 = (-1.0+l)*(3.0+l)/((1.0+l)*(1.0+2.0*l))
+
+            prefac_cl2dl =l*(l+1.0)/const_twopi
+            prefac_dl2cl = const_twopi/l/(l+1.0)
+
+            if (State%CP%WantScalars) then
+                if (State%CP%DoLensing) then
+
+                    currclEE = State%CLData%Cl_lensed(l, CT_E)*prefac_dl2cl
+                    currclTE = State%CLData%Cl_lensed(l, CT_Cross)*prefac_dl2cl
+                    if (l == 2) then
+                            currclEE_m1 = 0.0
+                    else
+                            currclEE_m1 = State%CLData%Cl_lensed(l-1, CT_E)*const_twopi/(l-1.0)/(l)
+                    end if
+                    currclEE_p1 = State%CLData%Cl_lensed(l+1, CT_E)*const_twopi/(l+1.0)/(l+2.0)
+
+                    if (State%CP%WantTensors) then
+                        currclBB = CLBB(l)*prefac_dl2cl
+                        if (l == 2) then
+                            currclBB_m1 = 0.0
+                        else
+                            currclBB_m1 = CLBB(l-1)*const_twopi/(l-1.0)/(l)
+                        end if
+                        currclBB_p1 = CLBB(l+1)*const_twopi/(l+1.0)/(l+2.0)
+                    end if
+
+                else
+
+                    currclEE = State%CLData%Cl_scalar(l, C_E)*prefac_dl2cl
+                    currclTE = State%CLData%Cl_scalar(l, C_Cross)*prefac_dl2cl
+                    if (l == 2) then
+                            !write(*,*) 'Check l==2'
+                            currclEE_m1 = 0.0
+                    else
+                            currclEE_m1 = State%CLData%Cl_scalar(l-1, C_E)*const_twopi/(l-1.0)/(l)
+                    end if
+                    currclEE_p1 = State%CLData%Cl_scalar(l+1, C_E)*const_twopi/(l+1.0)/(l+2.0)
+
+
+                    if (State%CP%WantTensors .and. l<= State%CP%Max_l_tensor) then
+                        currclBB = CLBB(l)*prefac_dl2cl
+                        if (l == 2) then
+                                !write(*,*) 'Check l==2'
+                            currclBB_m1 = 0.0
+                        else
+                            currclBB_m1 = CLBB(l-1)*const_twopi/(l-1.0)/(l)
+                        end if
+                        currclBB_p1 = CLBB(l+1)*const_twopi/(l+1.0)/(l+2.0)
+                    end if
+
+                end if
+
+            else if (State%CP%WantTensors) then
+                currclEE = State%CLData%Cl_tensor(l, CT_E)*prefac_dl2cl
+                currclTE = State%CLData%Cl_tensor(l, CT_Cross)*prefac_dl2cl
+                if (l == 2) then
+                    currclEE_m1 = 0.0
+                else
+                    currclEE_m1 = State%CLData%Cl_tensor(l-1, CT_E)*const_twopi/(l-1.0)/(l)
+                end if
+                currclEE_p1 = State%CLData%Cl_tensor(l+1, CT_E)*const_twopi/(l+1.0)/(l+2.0)
+
+            else
+                write(*,*) 'Plese select WantScalars or/and WantTensors .true. !'
+                !stop (111)
+            end if
+
+
+
+            newCl_E(l) = prefac_cl2dl * ((1.0 - (Params%beta2_0 + Params%beta2_123))*currclEE + &
+                           Params%beta2_123*K11*currclEE + Params%beta2_0*currclBB + &
+                           Params%beta2_123*K22_m1*currclBB_m1 + Params%beta2_123*K22_p1*currclBB_p1)
+
+            newCl_B(l) = prefac_cl2dl * ((1.0 - (Params%beta2_0 + Params%beta2_123))*currclBB + &
+                           Params%beta2_123*K11*currclBB + Params%beta2_0*currclEE + &
+                           Params%beta2_123*K22_m1*currclEE_m1 + Params%beta2_123*K22_p1*currclEE_p1)
+
+            newCl_TE(l) = prefac_cl2dl * ((1 - 0.5*(Params%beta2_0 + Params%beta2_123))*currclTE)
+
+        enddo
+    
+        if (State%CP%WantScalars) then
+            if (State%CP%DoLensing) then 
+                State%CLData%Cl_lensed(lmin_AF:lmax_AF, CT_E) = newCl_E
+                State%CLData%Cl_lensed(lmin_AF:lmax_AF, CT_Cross) = newCl_TE
+                if (State%CP%WantTensors) State%CLData%Cl_tensor(lmin_AF:lmax_AF, CT_B) = newCl_B
+            else
+                State%CLData%Cl_scalar(lmin_AF:lmax_AF, C_E) = newCl_E
+                State%CLData%Cl_scalar(lmin_AF:lmax_AF, C_Cross) = newCl_TE
+                if (State%CP%WantTensors) State%CLData%Cl_tensor(lmin_AF:lmax_AF, CT_B) = newCl_B
+            end if
+
+        else if (State%CP%WantTensors) then
+            State%CLData%Cl_tensor(lmin_AF:lmax_AF, CT_E) = newCl_E
+            State%CLData%Cl_tensor(lmin_AF:lmax_AF, CT_Cross) = newCl_TE
+            State%CLData%Cl_tensor(lmin_AF:lmax_AF, CT_B) = newCl_B
+        else
+            write(*,*) 'Plese select WantScalars or/and WantTensors .true. !'
+            !stop (112)
+        end if
+
+        deallocate(newCl_E,newCl_TE, newCl_B, CLBB)
+
+    end if
 
     end function CAMBdata_GetTransfers
 
