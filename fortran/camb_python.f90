@@ -311,16 +311,10 @@
         allocate(newCl_TE(State%CP%lmin_AF:State%CP%lmax_AF))
         newCl_TE = 0
 
-        if (State%CP%lmax_AF<= State%CP%Max_l_tensor) then
-            allocate(CLBB(State%CP%lmin_AF-1:State%CP%lmax_AF+1))
-            CLBB = 0
-            CLBB(State%CP%lmin_AF-1:State%CP%lmax_AF+1) = State%CLData%Cl_tensor(State%CP%lmin_AF-1:State%CP%lmax_AF+1,CT_B)
-        else
-            allocate(CLBB(State%CP%lmin_AF-1:State%CP%Max_l_tensor))
-            CLBB = 0
-            CLBB(State%CP%lmin_AF-1:State%CP%Max_l_tensor) = State%CLData%Cl_tensor(State%CP%lmin_AF-1:State%CP%Max_l_tensor,CT_B)
-        end if
-
+        allocate(CLBB(State%CP%lmin_AF-1:State%CP%lmax_AF+1))
+        CLBB = 0
+        if (State%CP%WantTensors) CLBB(State%CP%lmin_AF-1:State%CP%lmax_AF+1) = State%CLData%Cl_tensor(State%CP%lmin_AF-1:State%CP%lmax_AF+1,CT_B)
+        
 
         do l = State%CP%lmin_AF, State%CP%lmax_AF, 1
 
