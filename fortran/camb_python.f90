@@ -250,7 +250,7 @@
     integer :: error
     
     !!ML 
-    integer :: lmin_AF, lmax_AF, l
+    integer :: l
     real(dl) :: prefac_dl2cl, prefac_cl2dl
     real(dl) :: currclEE, currclTE, currclBB, currclEE_m1, currclBB_m1, currclEE_p1, currclBB_p1
     real(dl), dimension(:), allocatable :: newCl_E, newCl_TE, newCl_B, CLBB
@@ -264,14 +264,11 @@
     call CAMB_GetResults(State, Params, error, onlytransfer, onlytimesources)
 
     !!ML
-    lmin_AF = 2
-    lmax_AF = 500 !!ML we should put them not as hardcoded parameters 
-
-    if (State%CP%WantTensors .and. lmin_AF < State%CP%Max_l_tensor) then
+    if (State%CP%WantTensors .and. State%CP%lmin_AF < State%CP%Max_l_tensor) then
         check_lminAF = .true.
-    else if (State%CP%WantScalars .and. lmin_AF < State%CP%Max_l) then
+    else if (State%CP%WantScalars .and. State%CP%lmin_AF < State%CP%Max_l) then
         if (State%CP%DoLensing) then
-                if (lmin_AF<State%CLData%lmax_lensed) check_lminAF = .true.
+                if (State%CP%lmin_AF<State%CLData%lmax_lensed) check_lminAF = .true.
         else
            check_lminAF = .true.
         end if     
@@ -281,17 +278,17 @@
     end if
 
 
-    if (State%CP%WantTensors .and. lmax_AF > State%CP%Max_l_tensor) then
-        lmax_AF = State%CP%Max_l_tensor
+    if (State%CP%WantTensors .and. State%CP%lmax_AF > State%CP%Max_l_tensor) then
+        State%CP%lmax_AF = State%CP%Max_l_tensor
         check_lmaxAF = .false.
-    else if (State%CP%WantScalars .and. lmax_AF > State%CP%Max_l) then
+    else if (State%CP%WantScalars .and. State%CP%lmax_AF > State%CP%Max_l) then
         if (State%CP%DoLensing) then
-                if (lmax_AF > State%CLData%lmax_lensed) then
-                    lmax_AF = State%CLData%lmax_lensed
+                if (State%CP%lmax_AF > State%CLData%lmax_lensed) then
+                    State%CP%lmax_AF = State%CLData%lmax_lensed
                     check_lmaxAF = .false.
                 end if
         else
-            lmax_AF = State%CP%Max_l
+            State%CP%lmax_AF = State%CP%Max_l
             check_lmaxAF = .false.
         end if
     else
@@ -305,27 +302,27 @@
 
     if (check_lminAF) then
 
-        allocate(newCl_E(lmin_AF:lmax_AF))
+        allocate(newCl_E(State%CP%lmin_AF:State%CP%lmax_AF))
         newCl_E = 0
 
-        allocate(newCl_B(lmin_AF:lmax_AF))
+        allocate(newCl_B(State%CP%lmin_AF:State%CP%lmax_AF))
         newCl_B = 0            
 
-        allocate(newCl_TE(lmin_AF:lmax_AF))
+        allocate(newCl_TE(State%CP%lmin_AF:State%CP%lmax_AF))
         newCl_TE = 0
 
-        if (lmax_AF<= State%CP%Max_l_tensor) then
-            allocate(CLBB(lmin_AF-1:lmax_AF+1))
+        if (State%CP%lmax_AF<= State%CP%Max_l_tensor) then
+            allocate(CLBB(State%CP%lmin_AF-1:State%CP%lmax_AF+1))
             CLBB = 0
-            CLBB(lmin_AF-1:lmax_AF+1) = State%CLData%Cl_tensor(lmin_AF-1:lmax_AF+1,CT_B)
+            CLBB(State%CP%lmin_AF-1:State%CP%lmax_AF+1) = State%CLData%Cl_tensor(State%CP%lmin_AF-1:State%CP%lmax_AF+1,CT_B)
         else
-            allocate(CLBB(lmin_AF-1:State%CP%Max_l_tensor))
+            allocate(CLBB(State%CP%lmin_AF-1:State%CP%Max_l_tensor))
             CLBB = 0
-            CLBB(lmin_AF-1:State%CP%Max_l_tensor) = State%CLData%Cl_tensor(lmin_AF-1:State%CP%Max_l_tensor,CT_B)
+            CLBB(State%CP%lmin_AF-1:State%CP%Max_l_tensor) = State%CLData%Cl_tensor(State%CP%lmin_AF-1:State%CP%Max_l_tensor,CT_B)
         end if
 
 
-        do l = lmin_AF, lmax_AF, 1
+        do l = State%CP%lmin_AF, State%CP%lmax_AF, 1
 
             K11 = 4.0/(l*l+l)
             K22_m1 = (l*l - 4.0)/(l*(1.0+2.0*l))
@@ -413,19 +410,19 @@
     
         if (State%CP%WantScalars) then
             if (State%CP%DoLensing) then 
-                State%CLData%Cl_lensed(lmin_AF:lmax_AF, CT_E) = newCl_E
-                State%CLData%Cl_lensed(lmin_AF:lmax_AF, CT_Cross) = newCl_TE
-                if (State%CP%WantTensors) State%CLData%Cl_tensor(lmin_AF:lmax_AF, CT_B) = newCl_B
+                State%CLData%Cl_lensed(State%CP%lmin_AF:State%CP%lmax_AF, CT_E) = newCl_E
+                State%CLData%Cl_lensed(State%CP%lmin_AF:State%CP%lmax_AF, CT_Cross) = newCl_TE
+                if (State%CP%WantTensors) State%CLData%Cl_tensor(State%CP%lmin_AF:State%CP%lmax_AF, CT_B) = newCl_B
             else
-                State%CLData%Cl_scalar(lmin_AF:lmax_AF, C_E) = newCl_E
-                State%CLData%Cl_scalar(lmin_AF:lmax_AF, C_Cross) = newCl_TE
-                if (State%CP%WantTensors) State%CLData%Cl_tensor(lmin_AF:lmax_AF, CT_B) = newCl_B
+                State%CLData%Cl_scalar(State%CP%lmin_AF:State%CP%lmax_AF, C_E) = newCl_E
+                State%CLData%Cl_scalar(State%CP%lmin_AF:State%CP%lmax_AF, C_Cross) = newCl_TE
+                if (State%CP%WantTensors) State%CLData%Cl_tensor(State%CP%lmin_AF:State%CP%lmax_AF, CT_B) = newCl_B
             end if
 
         else if (State%CP%WantTensors) then
-            State%CLData%Cl_tensor(lmin_AF:lmax_AF, CT_E) = newCl_E
-            State%CLData%Cl_tensor(lmin_AF:lmax_AF, CT_Cross) = newCl_TE
-            State%CLData%Cl_tensor(lmin_AF:lmax_AF, CT_B) = newCl_B
+            State%CLData%Cl_tensor(State%CP%lmin_AF:State%CP%lmax_AF, CT_E) = newCl_E
+            State%CLData%Cl_tensor(State%CP%lmin_AF:State%CP%lmax_AF, CT_Cross) = newCl_TE
+            State%CLData%Cl_tensor(State%CP%lmin_AF:State%CP%lmax_AF, CT_B) = newCl_B
         else
             write(*,*) 'Plese select WantScalars or/and WantTensors .true. !'
             !stop (112)

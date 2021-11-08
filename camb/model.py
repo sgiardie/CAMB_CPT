@@ -184,6 +184,8 @@ class CAMBparams(F2003Class):
         ("min_l", c_int, "l_min for the scalar C_L (1 or 2, L=1 dipoles are Newtonian Gauge)"),
         ("max_l", c_int, "l_max for the scalar C_L"),
         ("max_l_tensor", c_int, "l_max for the tensor C_L"),
+        ("lmax_AF", c_int, "lmax for internal birefringence computation"),
+        ("lmin_AF", c_int, "lmin for internal birefringence computation"),
         ("max_eta_k", c_double, "Maximum k*eta_0 for scalar C_L, where eta_0 is the conformal time today"),
         ("max_eta_k_tensor", c_double, "Maximum k*eta_0 for tensor C_L, where eta_0 is the conformal time today"),
         ("ombh2", c_double, "Omega_baryon h^2"),
@@ -719,7 +721,8 @@ class CAMBparams(F2003Class):
                 self.NonLinear = NonLinear_none
 
     def set_for_lmax(self, lmax, max_eta_k=None, lens_potential_accuracy=0,
-                     lens_margin=150, k_eta_fac=2.5, lens_k_eta_reference=18000.0):
+                     lens_margin=150, k_eta_fac=2.5, lens_k_eta_reference=18000.0,
+                     lmin_AF=2, lmax_AF=500):
         r"""
         Set parameters to get CMB power spectra accurate to specific a l_lmax.
         Note this does not fix the actual output L range, spectra may be calculated above l_max
@@ -736,6 +739,8 @@ class CAMBparams(F2003Class):
         :param k_eta_fac:  k_eta_fac default factor for setting max_eta_k = k_eta_fac*lmax if max_eta_k=None
         :param lens_k_eta_reference:  value of max_eta_k to use when lens_potential_accuracy>0; use
                                       k_eta_max = lens_k_eta_reference*lens_potential_accuracy
+        :param lmin_AF: lmin in birefringence computation as in Lembo et al. 2021
+        :param lmax_AF: lmax in birefringence computation as in Lembo et al. 2021
         :return: self
         """
         if self.DoLensing:
@@ -746,6 +751,10 @@ class CAMBparams(F2003Class):
         if lens_potential_accuracy:
             self.set_nonlinear_lensing(True)
             self.max_eta_k = max(self.max_eta_k, lens_k_eta_reference * lens_potential_accuracy)
+
+        self.lmin_AF = lmin_AF
+        self.lmax_AF = lmax_AF
+
         return self
 
     def scalar_power(self, k):
