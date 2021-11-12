@@ -390,12 +390,12 @@
 
         enddo
 
-        open(107, file='cl_out.txt', status='new')
-        write(107,'("#",1A'//Trim(IntToStr(4))//'," ",*(A15))') 'l','EE','BBtens', 'TE' 
-        write(*,*) 'writing cl_out.txt' !CosmoSettings%lmax_tensor
-        do i=State%CP%lmin_AF,State%CP%lmax_AF
-            write(107,'(1I6,3E15.5)') i,newCl_E(i)+newCltens_E(i), newCltens_B(i), newCl_TE(i)+newCltens_TE(i)
-        end do
+        !open(107, file='cl_out.txt', status='new')
+        !write(107,'("#",1A'//Trim(IntToStr(4))//'," ",*(A15))') 'l','EE','BBtens', 'TE' 
+        !write(*,*) 'writing cl_out.txt' !CosmoSettings%lmax_tensor
+        !do i=State%CP%lmin_AF,State%CP%lmax_AF
+        !    write(107,'(1I6,3E15.5)') i,newCl_E(i)+newCltens_E(i), newCltens_B(i), newCl_TE(i)+newCltens_TE(i)
+        !end do
 
     
         if (State%CP%WantScalars) then
