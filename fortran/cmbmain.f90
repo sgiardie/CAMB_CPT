@@ -292,6 +292,16 @@
 
     subroutine ClTransferToCl(State)
     class(CAMBdata) :: State
+    !!ML CPT -- start: parameters
+    integer :: l,i
+    real(dl) :: prefac_dl2cl, prefac_cl2dl
+    real(dl) :: currclEE, currclEEtens, currclEE_m1, currclEEtens_m1, currclEE_p1, currclEEtens_p1
+    real(dl) :: currclTE, currclTEtens
+    real(dl) :: currclBBtens,currclBBtens_m1, currclBBtens_p1
+    real(dl), dimension(:), allocatable :: newCl_E, newCl_TE, newCltens_E, newCltens_TE, newCltens_B
+    real(dl) :: K11, K22_p1, K22_m1
+    logical :: check_lminAF = .false.
+    !!ML CPT -- end: parameters
 
     call SetActiveState(State)
     if (State%CP%WantScalars .and. State%CP%WantCls .and. global_error_flag==0) then
@@ -335,6 +345,130 @@
 
     if (CP%OutputNormalization >=2) call State%CLData%NormalizeClsAtl(CP,CP%OutputNormalization)
     !Normalize to C_l=1 at l=OutputNormalization
+
+    !!ML CPT -- start: otating the spectra
+    if (CP%WantScalars .and. CP%WantTensors) then 
+        CP%lmax_AF = min(CP%lmax_AF, CP%Max_l, CP%Max_l_tensor)
+        if (CP%lmin_AF < CP%lmax_AF) check_lminAF = .true.
+    else
+       if (.not. CP%WantTensors) then
+            CP%lmax_AF = min(CP%lmax_AF, CP%Max_l)
+            if (CP%lmin_AF < CP%lmax_AF) check_lminAF = .true.
+        else
+            CP%lmax_AF = min(CP%lmax_AF, CP%Max_l)
+            if (CP%lmin_AF < CP%lmax_AF) check_lminAF = .true.
+        end if
+    end if 
+
+    if (check_lminAF) then
+
+        allocate(newCl_E(CP%lmin_AF:CP%lmax_AF))
+        newCl_E = 0
+
+        allocate(newCl_TE(CP%lmin_AF:CP%lmax_AF))
+        newCl_TE = 0
+
+        allocate(newCltens_E(CP%lmin_AF:CP%lmax_AF))
+        newCltens_E = 0
+
+        allocate(newCltens_TE(CP%lmin_AF:CP%lmax_AF))
+        newCltens_TE = 0
+
+        allocate(newCltens_B(CP%lmin_AF:CP%lmax_AF))
+        newCltens_B = 0            
+ 
+        
+        do l = CP%lmin_AF, CP%lmax_AF, 1
+
+            K11 = 4.0/(l*l+l)
+            K22_m1 = (l*l - 4.0)/(l*(1.0+2.0*l))
+            K22_p1 = (-1.0+l)*(3.0+l)/((1.0+l)*(1.0+2.0*l))
+
+            prefac_cl2dl = l*(l+1.0)/const_twopi
+            prefac_dl2cl = const_twopi/l/(l+1.0)
+
+            if (CP%WantScalars) then
+                currclEE = State%CLData%Cl_scalar(l, C_E)*prefac_dl2cl
+                currclTE = State%CLData%Cl_scalar(l, C_Cross)*prefac_dl2cl
+                if (l == 2) then
+                    currclEE_m1 = 0.0
+                else
+                    currclEE_m1 = State%CLData%Cl_scalar(l-1, C_E)*const_twopi/(l-1.0)/(l)
+                end if
+                currclEE_p1 = State%CLData%Cl_scalar(l+1, C_E)*const_twopi/(l+1.0)/(l+2.0)
+            else
+                currclEE = 0.0
+                currclEE_m1 = 0.0
+                currclEE_p1 = 0.0
+                currclTE = 0.0
+            end if
+
+            if (CP%WantTensors) then
+                currclEEtens = State%CLData%Cl_tensor(l, CT_E)*prefac_dl2cl
+                currclTEtens = State%CLData%Cl_tensor(l, CT_Cross)*prefac_dl2cl
+                currclBBtens = State%CLData%Cl_tensor(l, CT_B)*prefac_dl2cl
+                if (l == 2) then
+                    currclEEtens_m1 = 0.0
+                    currclBBtens_m1 = 0.0
+                else
+                    currclEEtens_m1 = State%CLData%Cl_tensor(l-1, CT_E)*const_twopi/(l-1.0)/(l)
+                    currclBBtens_m1 = State%CLData%Cl_tensor(l-1, CT_B)*const_twopi/(l-1.0)/(l)
+                end if
+                currclBBtens_p1 = State%CLData%Cl_tensor(l+1, CT_B)*const_twopi/(l+1.0)/(l+2.0)
+                currclEEtens_p1 = State%CLData%Cl_tensor(l+1, CT_E)*const_twopi/(l+1.0)/(l+2.0)
+            else
+                currclEEtens = 0.0
+                currclEEtens_m1 = 0.0
+                currclEEtens_p1 = 0.0
+                currclTEtens = 0.0
+                currclBBtens = 0.0
+                currclBBtens_m1 = 0.0
+                currclEEtens_p1 = 0.0
+            end if
+
+
+            newCl_E(l) = prefac_cl2dl * ( (1.0 - (CP%beta2_0 + CP%beta2_123))*currclEE + &
+                           CP%beta2_123*K11*currclEE )
+
+            newCl_TE(l) = prefac_cl2dl * ((1 - 0.5*(CP%beta2_0 + CP%beta2_123))*currclTE)
+
+            newCltens_E(l) = prefac_cl2dl * ( (1.0 - (CP%beta2_0 + CP%beta2_123))*currclEEtens + &
+                           CP%beta2_123*K11*currclEEtens + CP%beta2_0*currclBBtens + &
+                           CP%beta2_123*K22_m1*currclBBtens_m1 + CP%beta2_123*K22_p1*currclBBtens_p1 )
+            
+            newCltens_TE(l) = prefac_cl2dl * ((1 - 0.5*(CP%beta2_0 + CP%beta2_123))*currclTEtens)
+
+            newCltens_B(l) = prefac_cl2dl * ( (1.0 - (CP%beta2_0 + CP%beta2_123))*currclBBtens + &
+                           CP%beta2_123*K11*currclBBtens + CP%beta2_0*(currclEE+currclEEtens) + &
+                           CP%beta2_123*K22_m1*(currclEE_m1+currclEEtens_m1) + &
+                           CP%beta2_123*K22_p1*(currclEE_p1+currclEEtens_p1) )
+        enddo
+
+        !open(107, file='cl_out.txt', status='new')
+        !write(107,'("#",1A'//Trim(IntToStr(4))//'," ",*(A15))') 'l','EE','BBtens', 'TE' 
+        !write(*,*) 'writing cl_out.txt' !CosmoSettings%lmax_tensor
+        !do i=State%CP%lmin_AF,State%CP%lmax_AF
+        !    write(107,'(1I6,3E15.5)') i,newCl_E(i)+newCltens_E(i), newCltens_B(i), newCl_TE(i)+newCltens_TE(i)
+        !end do
+    
+        if (CP%WantScalars) then
+            State%CLData%Cl_scalar(CP%lmin_AF:CP%lmax_AF, C_E) = newCl_E
+            State%CLData%Cl_scalar(CP%lmin_AF:CP%lmax_AF, C_Cross) = newCl_TE
+        end if
+
+        if (CP%WantTensors) then
+            State%CLData%Cl_tensor(CP%lmin_AF:CP%lmax_AF, CT_E) = newCltens_E
+            State%CLData%Cl_tensor(CP%lmin_AF:CP%lmax_AF, CT_Cross) = newCltens_TE
+            State%CLData%Cl_tensor(CP%lmin_AF:CP%lmax_AF, CT_B) = newCltens_B
+        end if
+
+        deallocate(newCl_E, newCltens_E, newCl_TE, newCltens_TE, newCltens_B)
+
+    else
+        write(*,*) 'Warning:The lmin for rotating the spectra is grater than the lmax up to which the spectra are computed!'
+        write(*,*) 'The program will not be stopped but the spectra will be not rotated.'
+    end if
+    !!ML CPT -- end: otating the spectra
 
     end subroutine ClTransferToCl
 
