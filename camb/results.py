@@ -445,6 +445,55 @@ class CAMBdata(F2003Class):
         for spectrum in spectra:
             P[spectrum] = getattr(self, 'get_' + spectrum + '_cls')(lmax, CMB_unit=CMB_unit,
                                                                     raw_cl=raw_cl)
+        
+        #!!ML CPT -- start: rotating the spectra
+        if self.Params.lmin_AF < lmax:
+            print('Scalars are rotated up to', min(lmax, self.Params.lmax_AF))
+            print('Tensors are rotated up to', min(lmax, self.Params.max_l_tensor, self.Params.lmax_AF))
+
+            twopi = 2.0 * np.pi
+            lmax_AF_eff = min(lmax, self.Params.lmax_AF)+1
+            lmin_AF_eff = self.Params.lmin_AF
+
+            ell_vec = np.arange(lmax_AF_eff+1)
+            ell_vec[0] = 1.0
+            ell2_vec = ell_vec**2
+            
+            prefac_dl2cl = twopi/(ell_vec*(ell_vec+1.0))
+            prefac_cl2dl = ell_vec[lmin_AF_eff:lmax_AF_eff]*(ell_vec[lmin_AF_eff:lmax_AF_eff]+1.0)/twopi 
+            
+            K11_l = 4.0/(ell_vec + ell2_vec)
+            K22_lm1 = (ell2_vec - 4.0)/(ell_vec*(2.0*ell_vec+1.0))
+            K22_lp1 = ((3.0+ell_vec)*(ell_vec-1.0))/((ell_vec+1.0)*(2.0*ell_vec+1.0))
+
+            clee = P['unlensed_total'][:lmax_AF_eff+1,1]*prefac_dl2cl
+            clbb = P['unlensed_total'][:lmax_AF_eff+1,2]*prefac_dl2cl
+            clte = P['unlensed_total'][:lmax_AF_eff+1,3]*prefac_dl2cl
+            
+
+            newclee = (1.0-(self.Params.beta2_0+self.Params.beta2_123)) * clee[lmin_AF_eff:lmax_AF_eff] + \
+                self.Params.beta2_123 * K11_l[lmin_AF_eff:lmax_AF_eff] * clee[lmin_AF_eff:lmax_AF_eff] + \
+                self.Params.beta2_0 * clbb[lmin_AF_eff:lmax_AF_eff] + \
+                self.Params.beta2_123 * K22_lp1[lmin_AF_eff:lmax_AF_eff] * clbb[lmin_AF_eff+1:lmax_AF_eff+1] + \
+                self.Params.beta2_123 * K22_lm1[lmin_AF_eff:lmax_AF_eff] * clbb[lmin_AF_eff-1:lmax_AF_eff-1] 
+            
+            newclbb = (1.0-(self.Params.beta2_0+self.Params.beta2_123)) * clbb[lmin_AF_eff:lmax_AF_eff] + \
+                self.Params.beta2_123 * K11_l[lmin_AF_eff:lmax_AF_eff] * clbb[lmin_AF_eff:lmax_AF_eff] + \
+                self.Params.beta2_0 * clee[lmin_AF_eff:lmax_AF_eff] + \
+                self.Params.beta2_123 * K22_lp1[lmin_AF_eff:lmax_AF_eff] * clee[lmin_AF_eff+1:lmax_AF_eff+1] + \
+                self.Params.beta2_123 * K22_lm1[lmin_AF_eff:lmax_AF_eff] * clee[lmin_AF_eff-1:lmax_AF_eff-1]
+
+            newclte = (1.0-0.5*(self.Params.beta2_0+self.Params.beta2_123)) * clte[lmin_AF_eff:lmax_AF_eff]
+
+            P['unlensed_total'][lmin_AF_eff:lmax_AF_eff,1] = newclee*prefac_cl2dl
+            P['unlensed_total'][lmin_AF_eff:lmax_AF_eff,2] = newclbb*prefac_cl2dl
+            P['unlensed_total'][lmin_AF_eff:lmax_AF_eff,3] = newclte*prefac_cl2dl
+            
+        else:
+            print('Warning: lmin_AF is grater than the lmax_tensor!')
+            print('CAMB will not be stopped but the spectra will be not rotated.')
+        #!!ML CPT -- end: rotating the spectra
+
         return P
 
     def get_cmb_correlation_functions(self, params=None, lmax=None, spectrum='lensed_scalar',
