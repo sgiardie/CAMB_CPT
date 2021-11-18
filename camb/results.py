@@ -466,29 +466,80 @@ class CAMBdata(F2003Class):
             K22_lm1 = (ell2_vec - 4.0)/(ell_vec*(2.0*ell_vec+1.0))
             K22_lp1 = ((3.0+ell_vec)*(ell_vec-1.0))/((ell_vec+1.0)*(2.0*ell_vec+1.0))
 
-            clee = P['unlensed_total'][:lmax_AF_eff+1,1]*prefac_dl2cl
-            clbb = P['unlensed_total'][:lmax_AF_eff+1,2]*prefac_dl2cl
-            clte = P['unlensed_total'][:lmax_AF_eff+1,3]*prefac_dl2cl
             
+            ## start: filling 'lensed_scalar', 'tensor' and 'total'
+            clee_scal_lens = P['lensed_scalar'][:lmax_AF_eff+1,1]*prefac_dl2cl
+            clte_scal_lens = P['lensed_scalar'][:lmax_AF_eff+1,3]*prefac_dl2cl
+            #
+            clee_tens = P['tensor'][:lmax_AF_eff+1,1]*prefac_dl2cl
+            clbb_tens = P['tensor'][:lmax_AF_eff+1,2]*prefac_dl2cl
+            clte_tens = P['tensor'][:lmax_AF_eff+1,3]*prefac_dl2cl
 
-            newclee = (1.0-(self.Params.beta2_0+self.Params.beta2_123)) * clee[lmin_AF_eff:lmax_AF_eff] + \
-                self.Params.beta2_123 * K11_l[lmin_AF_eff:lmax_AF_eff] * clee[lmin_AF_eff:lmax_AF_eff] + \
-                self.Params.beta2_0 * clbb[lmin_AF_eff:lmax_AF_eff] + \
-                self.Params.beta2_123 * K22_lp1[lmin_AF_eff:lmax_AF_eff] * clbb[lmin_AF_eff+1:lmax_AF_eff+1] + \
-                self.Params.beta2_123 * K22_lm1[lmin_AF_eff:lmax_AF_eff] * clbb[lmin_AF_eff-1:lmax_AF_eff-1] 
+            #Scalars
+            newclee_scal_lens = (1.0-(self.Params.beta2_0+self.Params.beta2_123)) * clee_scal_lens[lmin_AF_eff:lmax_AF_eff] + \
+                self.Params.beta2_123 * K11_l[lmin_AF_eff:lmax_AF_eff] * clee_scal_lens[lmin_AF_eff:lmax_AF_eff]
             
-            newclbb = (1.0-(self.Params.beta2_0+self.Params.beta2_123)) * clbb[lmin_AF_eff:lmax_AF_eff] + \
-                self.Params.beta2_123 * K11_l[lmin_AF_eff:lmax_AF_eff] * clbb[lmin_AF_eff:lmax_AF_eff] + \
-                self.Params.beta2_0 * clee[lmin_AF_eff:lmax_AF_eff] + \
-                self.Params.beta2_123 * K22_lp1[lmin_AF_eff:lmax_AF_eff] * clee[lmin_AF_eff+1:lmax_AF_eff+1] + \
-                self.Params.beta2_123 * K22_lm1[lmin_AF_eff:lmax_AF_eff] * clee[lmin_AF_eff-1:lmax_AF_eff-1]
+            newclbb_scal_lens = self.Params.beta2_0 * clee_scal_lens[lmin_AF_eff:lmax_AF_eff] + \
+                self.Params.beta2_123 * K22_lp1[lmin_AF_eff:lmax_AF_eff] * clee_scal_lens[lmin_AF_eff+1:lmax_AF_eff+1] + \
+                self.Params.beta2_123 * K22_lm1[lmin_AF_eff:lmax_AF_eff] * clee_scal_lens[lmin_AF_eff-1:lmax_AF_eff-1]
 
-            newclte = (1.0-0.5*(self.Params.beta2_0+self.Params.beta2_123)) * clte[lmin_AF_eff:lmax_AF_eff]
+            newclte_scal_lens = (1.0-0.5*(self.Params.beta2_0+self.Params.beta2_123)) * clte_scal_lens[lmin_AF_eff:lmax_AF_eff]
 
-            P['unlensed_total'][lmin_AF_eff:lmax_AF_eff,1] = newclee*prefac_cl2dl
-            P['unlensed_total'][lmin_AF_eff:lmax_AF_eff,2] = newclbb*prefac_cl2dl
-            P['unlensed_total'][lmin_AF_eff:lmax_AF_eff,3] = newclte*prefac_cl2dl
+            #Tensors
+            newclee_tens = (1.0-(self.Params.beta2_0+self.Params.beta2_123)) * clee_tens[lmin_AF_eff:lmax_AF_eff] + \
+                self.Params.beta2_123 * K11_l[lmin_AF_eff:lmax_AF_eff] * clee_tens[lmin_AF_eff:lmax_AF_eff] + \
+                self.Params.beta2_0 * clbb_tens[lmin_AF_eff:lmax_AF_eff] + \
+                self.Params.beta2_123 * K22_lp1[lmin_AF_eff:lmax_AF_eff] * clbb_tens[lmin_AF_eff+1:lmax_AF_eff+1] + \
+                self.Params.beta2_123 * K22_lm1[lmin_AF_eff:lmax_AF_eff] * clbb_tens[lmin_AF_eff-1:lmax_AF_eff-1] 
             
+            newclbb_tens = (1.0-(self.Params.beta2_0+self.Params.beta2_123)) * clbb_tens[lmin_AF_eff:lmax_AF_eff] + \
+                self.Params.beta2_123 * K11_l[lmin_AF_eff:lmax_AF_eff] * clbb_tens[lmin_AF_eff:lmax_AF_eff] + \
+                self.Params.beta2_0 * clee_tens[lmin_AF_eff:lmax_AF_eff] + \
+                self.Params.beta2_123 * K22_lp1[lmin_AF_eff:lmax_AF_eff] * clee_tens[lmin_AF_eff+1:lmax_AF_eff+1] + \
+                self.Params.beta2_123 * K22_lm1[lmin_AF_eff:lmax_AF_eff] * clee_tens[lmin_AF_eff-1:lmax_AF_eff-1]
+
+            newclte_tens = (1.0-0.5*(self.Params.beta2_0+self.Params.beta2_123)) * clte_tens[lmin_AF_eff:lmax_AF_eff]
+
+
+            P['total'][lmin_AF_eff:lmax_AF_eff,1] = (newclee_scal_lens+newclee_tens)*prefac_cl2dl
+            P['total'][lmin_AF_eff:lmax_AF_eff,2] = P['lensed_scalar'][lmin_AF_eff:lmax_AF_eff,2]+ \
+                                                        (newclbb_scal_lens+newclbb_tens)*prefac_cl2dl
+            P['total'][lmin_AF_eff:lmax_AF_eff,3] = (newclte_scal_lens+newclte_tens)*prefac_cl2dl
+            #
+            P['lensed_scalar'][lmin_AF_eff:lmax_AF_eff,1] = newclee_scal_lens*prefac_cl2dl
+            P['lensed_scalar'][lmin_AF_eff:lmax_AF_eff,2] += newclbb_scal_lens*prefac_cl2dl
+            P['lensed_scalar'][lmin_AF_eff:lmax_AF_eff,3] = newclte_scal_lens*prefac_cl2dl
+            #
+            P['tensor'][lmin_AF_eff:lmax_AF_eff,1] = newclee_tens*prefac_cl2dl
+            P['tensor'][lmin_AF_eff:lmax_AF_eff,2] = newclbb_tens*prefac_cl2dl
+            P['tensor'][lmin_AF_eff:lmax_AF_eff,3] = newclte_tens*prefac_cl2dl
+            ## end: filling 'lensed_scalar', 'tensor' and 'total'
+
+
+            ## start: filling 'unlensed_scalar' and 'unlensed_tot'
+            clee_scal = P['unlensed_scalar'][:lmax_AF_eff+1,1]*prefac_dl2cl
+            clte_scal = P['unlensed_scalar'][:lmax_AF_eff+1,3]*prefac_dl2cl
+
+            #Scalars
+            newclee_scal = (1.0-(self.Params.beta2_0+self.Params.beta2_123)) * clee_scal[lmin_AF_eff:lmax_AF_eff] + \
+                self.Params.beta2_123 * K11_l[lmin_AF_eff:lmax_AF_eff] * clee_scal[lmin_AF_eff:lmax_AF_eff]
+            
+            newclbb_scal = self.Params.beta2_0 * clee_scal[lmin_AF_eff:lmax_AF_eff] + \
+                self.Params.beta2_123 * K22_lp1[lmin_AF_eff:lmax_AF_eff] * clee_scal[lmin_AF_eff+1:lmax_AF_eff+1] + \
+                self.Params.beta2_123 * K22_lm1[lmin_AF_eff:lmax_AF_eff] * clee_scal[lmin_AF_eff-1:lmax_AF_eff-1]
+
+            newclte_scal = (1.0-0.5*(self.Params.beta2_0+self.Params.beta2_123)) * clte_scal[lmin_AF_eff:lmax_AF_eff]
+            
+            
+            P['unlensed_total'][lmin_AF_eff:lmax_AF_eff,1] = (newclee_scal+newclee_tens)*prefac_cl2dl
+            P['unlensed_total'][lmin_AF_eff:lmax_AF_eff,2] = (newclbb_scal+newclbb_tens)*prefac_cl2dl
+            P['unlensed_total'][lmin_AF_eff:lmax_AF_eff,3] = (newclte_scal+newclte_tens)*prefac_cl2dl
+            #
+            P['unlensed_scalar'][lmin_AF_eff:lmax_AF_eff,1] = newclee_scal*prefac_cl2dl
+            P['unlensed_scalar'][lmin_AF_eff:lmax_AF_eff,2] = newclbb_scal*prefac_cl2dl
+            P['unlensed_scalar'][lmin_AF_eff:lmax_AF_eff,3] = newclte_scal*prefac_cl2dl
+            ## end: filling 'unlensed_scalar' and 'unlensed_tot'
+
         else:
             print('Warning: lmin_AF is grater than the lmax_tensor!')
             print('CAMB will not be stopped but the spectra will be not rotated.')
