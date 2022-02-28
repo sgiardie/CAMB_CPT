@@ -152,6 +152,8 @@
 
         real(dl) :: beta2_0
         real(dl) :: beta2_123 
+        real(dl) :: beta2_E
+        real(dl) :: beta2_B
 
         class(TInitialPower), allocatable :: InitPower
         class(TRecombinationModel), allocatable :: Recomb

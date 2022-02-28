@@ -207,6 +207,8 @@ class CAMBparams(F2003Class):
          "Number of physical neutrinos per distinct eigenstate"),
         ("beta2_0",  c_double, "beta2_0"),
         ("beta2_123",  c_double, "beta2_123"),
+        ("beta2_E",  c_double, "beta2_E"),
+        ("beta2_B",  c_double, "beta2_B"),
         ("InitPower", AllocatableObject(InitialPower)),
         ("Recomb", AllocatableObject(recomb.RecombinationModel)),
         ("Reion", AllocatableObject(reion.ReionizationModel)),
@@ -413,7 +415,7 @@ class CAMBparams(F2003Class):
                       standard_neutrino_neff=constants.default_nnu, TCMB=constants.COBE_CMBTemp,
                       tau: Optional[float] = None, zrei: Optional[float] = None, deltazrei: Optional[float] = None,
                       Alens=1.0, bbn_predictor: Union[None, str, bbn.BBNPredictor] = None, theta_H0_range=(10, 100),
-                      beta2_0=0.0, beta2_123=0.0):
+                      beta2_0=0.0, beta2_123=0.0, beta2_E=0.0, beta2_B=0.0):
         r"""
         Sets cosmological parameters in terms of physical densities and parameters (e.g. as used in Planck analyses).
         Default settings give a single distinct neutrino mass eigenstate, by default one neutrino with mnu = 0.06eV.
@@ -478,6 +480,8 @@ class CAMBparams(F2003Class):
  
         self.beta2_0 = beta2_0
         self.beta2_123 = beta2_123
+        self.beta2_E = beta2_E
+        self.beta2_B = beta2_B
 
         neutrino_mass_fac = constants.neutrino_mass_fac * (constants.COBE_CMBTemp / TCMB) ** 3
 
