@@ -572,8 +572,7 @@ class CAMBdata(F2003Class):
             
 
             #adding another column to the power spectra to be filled with ClVV
-            for k in P.keys():
-                P[k] = np.append(P[k],np.zeros((len(P[k]),1)),axis = 1)
+            P = {k: np.append(P[k], np.zeros((len(P[k]),1)), axis = 1) for k in P.keys()}
 
             P['unlensed_total'][lmin_AF_eff:lmax_AF_eff,4] = (newclvv_scal+newclvv_tens)*prefac_cl2dl
             P['unlensed_scalar'][lmin_AF_eff:lmax_AF_eff,4] = newclvv_scal*prefac_cl2dl
