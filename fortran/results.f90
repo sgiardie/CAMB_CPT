@@ -238,12 +238,15 @@
 
     contains
     procedure :: DeltaTime => CAMBdata_DeltaTime
+    procedure :: DeltaTimeArr => CAMBdata_DeltaTimeArr
     procedure :: TimeOfz => CAMBdata_TimeOfz
     procedure :: TimeOfzArr => CAMBdata_TimeOfzArr
     procedure :: DeltaPhysicalTimeGyr => CAMBdata_DeltaPhysicalTimeGyr
+    procedure :: DeltaPhysicalTimeGyrArr => CAMBdata_DeltaPhysicalTimeGyrArr
     procedure :: AngularDiameterDistance => CAMBdata_AngularDiameterDistance
     procedure :: AngularDiameterDistanceArr => CAMBdata_AngularDiameterDistanceArr
     procedure :: AngularDiameterDistance2 => CAMBdata_AngularDiameterDistance2
+    procedure :: AngularDiameterDistance2Arr => CAMBdata_AngularDiameterDistance2Arr
     procedure :: LuminosityDistance => CAMBdata_LuminosityDistance
     procedure :: ComovingRadialDistance => CAMBdata_ComovingRadialDistance
     procedure :: ComovingRadialDistanceArr => CAMBdata_ComovingRadialDistanceArr
@@ -603,6 +606,21 @@
 
     end function CAMBdata_DeltaTime
 
+    subroutine CAMBdata_DeltaTimeArr(this, arr,  a1, a2, n, tol)
+    class(CAMBdata) :: this
+    integer, intent(in) :: n
+    real(dl), intent(out) :: arr(n)
+    real(dl), intent(in) :: a1(n), a2(n)
+    real(dl), intent(in), optional :: tol
+    integer i
+
+    !$OMP PARALLEL DO DEFAULT(SHARED),SCHEDULE(STATIC)
+    do i = 1, n
+        arr(i) = this%DeltaTime(a1(i), a2(i), tol)
+    end do
+
+    end subroutine CAMBdata_DeltaTimeArr
+
     function CAMBdata_TimeOfz(this, z, tol)
     class(CAMBdata) :: this
     real(dl) CAMBdata_TimeOfz
@@ -653,6 +671,22 @@
     CAMBdata_DeltaPhysicalTimeGyr = Integrate_Romberg(this, dtda,a1,a2,atol)*Mpc/c/Gyr
     end function CAMBdata_DeltaPhysicalTimeGyr
 
+    subroutine CAMBdata_DeltaPhysicalTimeGyrArr(this, arr,  a1, a2, n, tol)
+    class(CAMBdata) :: this
+    integer, intent(in) :: n
+    real(dl), intent(out) :: arr(n)
+    real(dl), intent(in) :: a1(n), a2(n)
+    real(dl), intent(in), optional :: tol
+    integer i
+
+    !$OMP PARALLEL DO DEFAULT(SHARED),SCHEDULE(STATIC)
+    do i = 1, n
+        arr(i) = this%DeltaPhysicalTimeGyr(a1(i), a2(i), tol)
+    end do
+
+    end subroutine CAMBdata_DeltaPhysicalTimeGyrArr
+
+
     function CAMBdata_AngularDiameterDistance(this,z)
     class(CAMBdata) :: this
     !This is the physical (non-comoving) angular diameter distance in Mpc
@@ -685,17 +719,37 @@
     end subroutine CAMBdata_AngularDiameterDistanceArr
 
 
-    function CAMBdata_AngularDiameterDistance2(this,z1, z2) ! z1 < z2
+    function CAMBdata_AngularDiameterDistance2(this,z1, z2)
+    ! z1 < z2, otherwise returns zero
     !From http://www.slac.stanford.edu/~amantz/work/fgas14/#cosmomc
     class(CAMBdata) :: this
     real(dl) CAMBdata_AngularDiameterDistance2
     real(dl), intent(in) :: z1, z2
 
-    CAMBdata_AngularDiameterDistance2 = this%curvature_radius/(1+z2)* &
-        this%rofchi(this%ComovingRadialDistance(z2)/this%curvature_radius &
-        - this%ComovingRadialDistance(z1)/this%curvature_radius)
+    if (z2 < z1 + 1e-4) then
+        CAMBdata_AngularDiameterDistance2=0
+    else
+        CAMBdata_AngularDiameterDistance2 = this%curvature_radius/(1+z2)* &
+            this%rofchi( this%DeltaTime(1/(1+z2),1/(1+z1))/this%curvature_radius)
+    end if
 
     end function CAMBdata_AngularDiameterDistance2
+
+    subroutine CAMBdata_AngularDiameterDistance2Arr(this, arr, z1, z2, n)
+    class(CAMBdata) :: this
+    real(dl), intent(out) :: arr(n)
+    real(dl), intent(in) :: z1(n), z2(n)
+    integer, intent(in) :: n
+    integer i
+
+    !$OMP PARALLEL DO DEFAULT(SHARED),SCHEDULE(STATIC)
+    do i = 1, n
+        arr(i) = this%AngularDiameterDistance2(z1(i),z2(i))
+    end do
+    !$OMP END PARALLEL DO
+
+    end subroutine CAMBdata_AngularDiameterDistance2Arr
+
 
     function CAMBdata_LuminosityDistance(this,z)
     class(CAMBdata) :: this

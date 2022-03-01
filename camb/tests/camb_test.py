@@ -71,6 +71,8 @@ class CambTest(unittest.TestCase):
         self.assertEqual(pars.InitPower.ns, 1.2)
         self.assertTrue(pars.WantTransfer)
         pars.DarkEnergy = None
+        pars = camb.set_params(**{'H0': 67, 'ombh2': 0.002, 'r': 0.1, 'Accuracy.AccurateBB': True})
+        self.assertEqual(pars.Accuracy.AccurateBB, True)
 
         from camb.sources import GaussianSourceWindow
         pars = camb.CAMBparams()
@@ -231,6 +233,21 @@ class CambTest(unittest.TestCase):
         pars.set_cosmology(H0=68.5, ombh2=0.022, omch2=0.122, YHe=0.2453, mnu=0.07, omk=0, zrei=zre)
         results = camb.get_background(pars)
         self.assertEqual(results.Params.Reion.redshift, zre)
+
+        pars = camb.CAMBparams()
+        pars.set_cosmology(H0=68.5, ombh2=0.022, omch2=0.122, YHe=0.2453, mnu=0.07, omk=-0.05)
+        data = camb.get_background(pars)
+        delta2 = data.curvature_radius / (1 + 0.25) * (
+            np.sin((data.comoving_radial_distance(0.25) - data.comoving_radial_distance(0.05)) / data.curvature_radius))
+        np.testing.assert_allclose(delta2, data.angular_diameter_distance2(0.05, 0.25))
+        dists = data.angular_diameter_distance2([0.3, 0.05, 0.25], [1, 0.25, 0.05])
+        self.assertAlmostEqual(delta2, dists[1])
+        self.assertEqual(0, dists[2])
+
+        self.assertEqual(data.physical_time(0.4), data.physical_time([0.2, 0.4])[1])
+        d = data.conformal_time_a1_a2(0, 0.5) + data.conformal_time_a1_a2(0.5, 1)
+        self.assertAlmostEqual(d, data.conformal_time_a1_a2(0, 1))
+        self.assertAlmostEqual(d, sum(data.conformal_time_a1_a2([0, 0.5], [0.5, 1])))
 
     def testEvolution(self):
         redshifts = [0.4, 31.5]

@@ -2,7 +2,7 @@ set -e
 
 gfortran --version
 python --version
-python setup.py install
+pip install -e .
 python -c "import camb; print(camb.__version__)"
 python -m unittest camb.tests.camb_test
 rm -Rf HMcode_test_outputs
@@ -22,7 +22,7 @@ then
  esac
  python setup.py sdist
  pip install twine
- twine upload -r pypitest --repository-url https://test.pypi.org/legacy/ dist/*
+ twine upload -r pypitest --repository-url https://test.pypi.org/legacy/ dist/* || true
 #too much delay on test.pypi to reliably immediately test install
 # mkdir -p test_dir
 # pushd test_dir
