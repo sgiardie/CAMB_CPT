@@ -726,7 +726,7 @@ class CAMBparams(F2003Class):
 
     def set_for_lmax(self, lmax, max_eta_k=None, lens_potential_accuracy=0,
                      lens_margin=150, k_eta_fac=2.5, lens_k_eta_reference=18000.0,
-                     lmin_AF=2, lmax_AF=500):
+                     lmin_AF=2, lmax_AF=1000):
         r"""
         Set parameters to get CMB power spectra accurate to specific a l_lmax.
         Note this does not fix the actual output L range, spectra may be calculated above l_max
