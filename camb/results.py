@@ -451,11 +451,12 @@ class CAMBdata(F2003Class):
         
         #!!ML CPT -- start: rotating the spectra
         if self.Params.lmin_AF < lmax:
-            print('Scalars are rotated up to', min(lmax, self.Params.lmax_AF))
-            print('Tensors are rotated up to', min(lmax, self.Params.max_l_tensor, self.Params.lmax_AF))
+            #we are taking the min between lmax_AF and lmax-2 since ell_vec (computed up to min(...)+2) has to have the same length as P[spectrum][:lmax] if lmax < lmax_AF
+            print('Scalars are rotated up to', min(lmax-2, self.Params.lmax_AF))
+            print('Tensors are rotated up to', min(lmax-2, self.Params.max_l_tensor, self.Params.lmax_AF))
 
             twopi = 2.0 * np.pi
-            lmax_AF_eff = min(lmax, self.Params.lmax_AF)+1
+            lmax_AF_eff = min(lmax-2, self.Params.lmax_AF)+1
             lmin_AF_eff = self.Params.lmin_AF
 
 
