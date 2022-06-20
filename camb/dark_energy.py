@@ -67,6 +67,7 @@ class DarkEnergyEqnOfState(DarkEnergyModel):
             raise ValueError('Dark energy w(a) table non-equal sized arrays')
         if not np.isclose(a[-1], 1):
             raise ValueError('Dark energy w(a) arrays must end at a=1')
+        if np.any(a <= 0):
 
         self.f_SetWTable(a, w, byref(c_int(len(a))))
         return self

@@ -33,6 +33,12 @@ Transfer_Newt_vel_baryon = 12
 Transfer_vel_baryon_cdm = 13
 Transfer_max = Transfer_vel_baryon_cdm
 
+￼# for 21cm case
+￼Transfer_monopole = 4
+￼Transfer_vnewt = 5
+￼Transfer_Tmat = 6
+￼
+￼
 NonLinear_none = "NonLinear_none"
 NonLinear_pk = "NonLinear_pk"
 NonLinear_lens = "NonLinear_lens"
@@ -726,7 +732,7 @@ class CAMBparams(F2003Class):
 
     def set_for_lmax(self, lmax, max_eta_k=None, lens_potential_accuracy=0,
                      lens_margin=150, k_eta_fac=2.5, lens_k_eta_reference=18000.0,
-                     lmin_AF=2, lmax_AF=None):
+                     lmin_AF=2, lmax_AF=None, nonlinear=None):
         r"""
         Set parameters to get CMB power spectra accurate to specific a l_lmax.
         Note this does not fix the actual output L range, spectra may be calculated above l_max
@@ -745,6 +751,7 @@ class CAMBparams(F2003Class):
                                       k_eta_max = lens_k_eta_reference*lens_potential_accuracy
         :param lmin_AF: lmin in birefringence computation as in Lembo et al. 2021
         :param lmax_AF: lmax in birefringence computation as in Lembo et al. 2021
+        :param nonlinear: use non-linear power spectrum; if None, sets nonlinear if lens_potential_accuracy>0 otherwise preserves current setting
         :return: self
         """
         if self.DoLensing:
@@ -753,8 +760,10 @@ class CAMBparams(F2003Class):
             self.max_l = lmax
         self.max_eta_k = max_eta_k or self.max_l * k_eta_fac
         if lens_potential_accuracy:
-            self.set_nonlinear_lensing(True)
+            self.set_nonlinear_lensing(nonlinear is not False)
             self.max_eta_k = max(self.max_eta_k, lens_k_eta_reference * lens_potential_accuracy)
+        elif nonlinear is not None:
+￼            self.set_nonlinear_lensing(nonlinear)
 
         self.lmin_AF = lmin_AF
         if lmax_AF is not None:
