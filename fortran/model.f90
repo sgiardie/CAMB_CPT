@@ -132,6 +132,9 @@
         ! _tensor settings only used in initialization,
         !Max_l and Max_eta_k are set to the tensor variables if only tensors requested
 
+        integer   :: lmin_AF = 2
+        integer   :: lmax_AF = 500
+
         real(dl)  :: ombh2 = 0._dl !baryon density Omega_b h^2
         real(dl)  :: omch2 = 0._dl !cold dark matter density Omega_c h^2
         real(dl)  :: omk = 0._dl !Omega_K
@@ -146,6 +149,11 @@
         real(dl)  :: Nu_mass_degeneracies(max_nu)
         real(dl)  :: Nu_mass_fractions(max_nu) !The ratios of the total densities
         integer   :: Nu_mass_numbers(max_nu) !physical number per eigenstate
+
+        real(dl) :: beta2_0
+        real(dl) :: beta2_123 
+        real(dl) :: beta2_E
+        real(dl) :: beta2_B
 
         class(TInitialPower), allocatable :: InitPower
         class(TRecombinationModel), allocatable :: Recomb

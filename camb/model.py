@@ -33,11 +33,12 @@ Transfer_Newt_vel_baryon = 12
 Transfer_vel_baryon_cdm = 13
 Transfer_max = Transfer_vel_baryon_cdm
 
-# for 21cm case
-Transfer_monopole = 4
-Transfer_vnewt = 5
-Transfer_Tmat = 6
-
+￼# for 21cm case
+￼Transfer_monopole = 4
+￼Transfer_vnewt = 5
+￼Transfer_Tmat = 6
+￼
+￼
 NonLinear_none = "NonLinear_none"
 NonLinear_pk = "NonLinear_pk"
 NonLinear_lens = "NonLinear_lens"
@@ -191,6 +192,8 @@ class CAMBparams(F2003Class):
         ("max_l_tensor", c_int, "l_max for the tensor C_L"),
         ("max_eta_k", c_double, "Maximum k*eta_0 for scalar C_L, where eta_0 is the conformal time today"),
         ("max_eta_k_tensor", c_double, "Maximum k*eta_0 for tensor C_L, where eta_0 is the conformal time today"),
+        ("lmin_AF", c_int, "lmin for internal birefringence computation"),
+        ("lmax_AF", c_int, "lmax for internal birefringence computation"),
         ("ombh2", c_double, "Omega_baryon h^2"),
         ("omch2", c_double, "Omega_cdm h^2"),
         ("omk", c_double, "Omega_K"),
@@ -208,6 +211,10 @@ class CAMBparams(F2003Class):
          "Mass fraction in each distinct eigenstate"),
         ("nu_mass_numbers", c_int * max_nu, {"size": "nu_mass_eigenstates"},
          "Number of physical neutrinos per distinct eigenstate"),
+        ("beta2_0",  c_double, "beta2_0"),
+        ("beta2_123",  c_double, "beta2_123"),
+        ("beta2_E",  c_double, "beta2_E"),
+        ("beta2_B",  c_double, "beta2_B"),
         ("InitPower", AllocatableObject(InitialPower)),
         ("Recomb", AllocatableObject(recomb.RecombinationModel)),
         ("Reion", AllocatableObject(reion.ReionizationModel)),
@@ -413,7 +420,8 @@ class CAMBparams(F2003Class):
                       mnu=0.06, nnu=constants.default_nnu, YHe: Optional[float] = None, meffsterile=0.0,
                       standard_neutrino_neff=constants.default_nnu, TCMB=constants.COBE_CMBTemp,
                       tau: Optional[float] = None, zrei: Optional[float] = None, deltazrei: Optional[float] = None,
-                      Alens=1.0, bbn_predictor: Union[None, str, bbn.BBNPredictor] = None, theta_H0_range=(10, 100)):
+                      Alens=1.0, bbn_predictor: Union[None, str, bbn.BBNPredictor] = None, theta_H0_range=(10, 100),
+                      beta2_0=0.0, beta2_123=0.0, beta2_E=0.0, beta2_B=0.0):
         r"""
         Sets cosmological parameters in terms of physical densities and parameters (e.g. as used in Planck analyses).
         Default settings give a single distinct neutrino mass eigenstate, by default one neutrino with mnu = 0.06eV.
@@ -475,6 +483,11 @@ class CAMBparams(F2003Class):
         self.ombh2 = ombh2
         self.omch2 = omch2
         self.Alens = Alens
+ 
+        self.beta2_0 = beta2_0
+        self.beta2_123 = beta2_123
+        self.beta2_E = beta2_E
+        self.beta2_B = beta2_B
 
         neutrino_mass_fac = constants.neutrino_mass_fac * (constants.COBE_CMBTemp / TCMB) ** 3
 
@@ -718,7 +731,8 @@ class CAMBparams(F2003Class):
                 self.NonLinear = NonLinear_none
 
     def set_for_lmax(self, lmax, max_eta_k=None, lens_potential_accuracy=0,
-                     lens_margin=150, k_eta_fac=2.5, lens_k_eta_reference=18000.0, nonlinear=None):
+                     lens_margin=150, k_eta_fac=2.5, lens_k_eta_reference=18000.0,
+                     lmin_AF=2, lmax_AF=None, nonlinear=None):
         r"""
         Set parameters to get CMB power spectra accurate to specific a l_lmax.
         Note this does not fix the actual output L range, spectra may be calculated above l_max
@@ -735,8 +749,9 @@ class CAMBparams(F2003Class):
         :param k_eta_fac:  k_eta_fac default factor for setting max_eta_k = k_eta_fac*lmax if max_eta_k=None
         :param lens_k_eta_reference:  value of max_eta_k to use when lens_potential_accuracy>0; use
                                       k_eta_max = lens_k_eta_reference*lens_potential_accuracy
-        :param nonlinear: use non-linear power spectrum; if None, sets nonlinear if lens_potential_accuracy>0 otherwise
-                          preserves current setting
+        :param lmin_AF: lmin in birefringence computation as in Lembo et al. 2021
+        :param lmax_AF: lmax in birefringence computation as in Lembo et al. 2021
+        :param nonlinear: use non-linear power spectrum; if None, sets nonlinear if lens_potential_accuracy>0 otherwise preserves current setting
         :return: self
         """
         if self.DoLensing:
@@ -748,7 +763,14 @@ class CAMBparams(F2003Class):
             self.set_nonlinear_lensing(nonlinear is not False)
             self.max_eta_k = max(self.max_eta_k, lens_k_eta_reference * lens_potential_accuracy)
         elif nonlinear is not None:
-            self.set_nonlinear_lensing(nonlinear)
+￼            self.set_nonlinear_lensing(nonlinear)
+
+        self.lmin_AF = lmin_AF
+        if lmax_AF is not None:
+            self.lmax_AF = lmax_AF
+        else:
+            self.lmax_AF = self.max_l
+
         return self
 
     def scalar_power(self, k):

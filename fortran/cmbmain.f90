@@ -334,7 +334,6 @@
     if (global_error_flag/=0) return
 
     if (CP%OutputNormalization >=2) call State%CLData%NormalizeClsAtl(CP,CP%OutputNormalization)
-    !Normalize to C_l=1 at l=OutputNormalization
 
     end subroutine ClTransferToCl
 
