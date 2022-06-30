@@ -33,12 +33,12 @@ Transfer_Newt_vel_baryon = 12
 Transfer_vel_baryon_cdm = 13
 Transfer_max = Transfer_vel_baryon_cdm
 
-￼# for 21cm case
-￼Transfer_monopole = 4
-￼Transfer_vnewt = 5
-￼Transfer_Tmat = 6
-￼
-￼
+# for 21cm case
+Transfer_monopole = 4
+Transfer_vnewt = 5
+Transfer_Tmat = 6
+
+
 NonLinear_none = "NonLinear_none"
 NonLinear_pk = "NonLinear_pk"
 NonLinear_lens = "NonLinear_lens"
@@ -763,7 +763,7 @@ class CAMBparams(F2003Class):
             self.set_nonlinear_lensing(nonlinear is not False)
             self.max_eta_k = max(self.max_eta_k, lens_k_eta_reference * lens_potential_accuracy)
         elif nonlinear is not None:
-￼            self.set_nonlinear_lensing(nonlinear)
+            self.set_nonlinear_lensing(nonlinear)
 
         self.lmin_AF = lmin_AF
         if lmax_AF is not None:
