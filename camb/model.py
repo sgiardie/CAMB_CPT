@@ -469,6 +469,10 @@ class CAMBparams(F2003Class):
          or name of a BBN predictor class, or file name of an interpolation table
         :param theta_H0_range: if thetastar or cosmomc_theta is specified, the min, max interval of H0 values to map to;
           if H0 is outside this range it will raise an exception.
+        :param beta2_0: it corresponds to the parameter :math:`\beta^2_{AF,T}` in (ref to our paper). It is a combination of the time component of the Chern-Simons vector :math:`(k_{AF})_\mu` (presented in arXiv:astro-ph/0702379), causing a mixing between EE and BB power spectra, a non-null EB and TB spectra and a rescaling of the TE one.
+        :param beta2_123: it corresponds to the parameter :math:`\beta^2_{AF,S}` in (ref to our paper). It is a combination of the space components of the Chern-Simons vector :math:`(k_{AF})_\mu` (presented in arXiv:astro-ph/0702379), causing a mixing between EE and BB power spectra and a rescaling of the TE one.
+        :param beta2_E: it corresponds to the parameter :math:`\beta^2_{F,E}` in (ref to our paper). It is a combination of the components of the CPT-even tensor :math:`(k_{F})^{\mu \nu \rho \sigma}` (presented in arXiv:astro-ph/0702379), causing a non-null VV power spectrum and a rescaling of the TE one.
+        :param beta2_B: it corresponds to the parameter :math:`\beta^2_{F,B}` in (ref to our paper). It is a combination of the components of the CPT-even tensor :math:`(k_{F})^{\mu \nu \rho \sigma}` (presented in arXiv:astro-ph/0702379), causing a non-null VV power spectrum and a rescaling of the TE one.
         """
 
         if YHe is None:
