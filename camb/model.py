@@ -754,7 +754,7 @@ class CAMBparams(F2003Class):
         :param lens_k_eta_reference:  value of max_eta_k to use when lens_potential_accuracy>0; use
                                       k_eta_max = lens_k_eta_reference*lens_potential_accuracy
         :param lmin_AF: lmin in birefringence computation as in Lembo et al. 2021
-        :param lmax_AF: lmax in birefringence computation as in Lembo et al. 2021
+        :param lmax_AF: lmax in birefringence computation as in Lembo et al. 2021. Set this param to the maximum relevant l for the dataset used.  
         :param nonlinear: use non-linear power spectrum; if None, sets nonlinear if lens_potential_accuracy>0 otherwise preserves current setting
         :return: self
         """
