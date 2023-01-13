@@ -124,6 +124,7 @@ def make_library(cluster=False):
                   'you may need to log off and on again).' % _compile.gfortran_min)
             print('        You can get a Windows gfortran build from https://sourceforge.net/projects/mingw-w64/files/')
             print('        - go to Files, and download MinGW-W64 Online Installer.')
+            print('        Alternatively news versions at https://github.com/niXman/mingw-builds-binaries')
             if _compile.is_32_bit:
                 raise IOError('No 32bit Windows DLL provided, you need to build or use 64 bit python')
             else:
@@ -305,8 +306,9 @@ if __name__ == "__main__":
               'Programming Language :: Python :: 3.6',
               'Programming Language :: Python :: 3.7',
               'Programming Language :: Python :: 3.8',
-              'Programming Language :: Python :: 3.9'
-              'Programming Language :: Python :: 3.10'
+              'Programming Language :: Python :: 3.9',
+              'Programming Language :: Python :: 3.10',
+              'Programming Language :: Python :: 3.11'
           ],
           keywords=['cosmology', 'CAMB', 'CMB'],
           install_requires=['scipy>=1.0', 'sympy>=1.0'],
