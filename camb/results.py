@@ -643,6 +643,10 @@ class CAMBdata(F2003Class):
         """
         Get the mode evolution as a function of conformal time for some k values.
 
+        Note that gravitational potentials (e.g. Weyl) are not integrated in the code and are
+        calculated as derived parameters; they may be numerically unstable far outside the horizon.
+        (use the series expansion result if needed far outside the horizon)
+
         :param q: wavenumber values to calculate (or array of k values)
         :param eta: array of requested conformal times to output
         :param vars: list of variable names or sympy symbolic expressions to output (using camb.symbolic)
@@ -1123,7 +1127,7 @@ class CAMBdata(F2003Class):
                 # NB returns dimensionality as the 2D one: 1 dimension if z single
                 return (lambda x: x[0] if np.isscalar(args[0]) else x)(super().__call__(*(args[1:])))
 
-            def P(self, z, kh, grid=None):
+            def P(self, z, kh, **_kwargs):
                 # grid kwarg is ignored
                 if self.islog:
                     return self.logsign * np.exp(self(z, np.log(kh)))
@@ -1645,7 +1649,7 @@ class CAMBdata(F2003Class):
 
     def physical_time_a1_a2(self, a1, a2):
         """
-        Get physical time between two scalar factors in Gigayears
+        Get physical time between two scalar factors in Julian Gigayears
 
         Must have called :meth:`calc_background`, :meth:`calc_background_no_thermo` or calculated transfer functions
         or power spectra.
@@ -1664,7 +1668,7 @@ class CAMBdata(F2003Class):
 
     def physical_time(self, z):
         """
-        Get physical time from hot big bang to redshift z in Gigayears.
+        Get physical time from hot big bang to redshift z in Julian Gigayears.
 
         :param z:  redshift
         :return: t(z)/Gigayear
