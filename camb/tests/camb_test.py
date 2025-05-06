@@ -13,7 +13,7 @@ except ImportError:
 from camb import model, correlations, bbn, dark_energy, initialpower
 from camb.baseconfig import CAMBParamRangeError, CAMBValueError
 
-fast = 'ci fast' in os.getenv("TRAVIS_COMMIT_MESSAGE", "") or os.getenv("GITHUB_ACTIONS")
+fast = 'ci fast' in os.getenv("GITHUB_ACTIONS", '')
 
 
 class CambTest(unittest.TestCase):
@@ -93,7 +93,7 @@ class CambTest(unittest.TestCase):
         self.assertEqual(params, {'ombh2', 'deltazrei', 'omnuh2', 'tau', 'omk', 'zrei', 'thetastar', 'nrunrun',
                                   'meffsterile', 'nnu', 'ntrun', 'HMCode_A_baryon', 'HMCode_eta_baryon',
                                   'HMCode_logT_AGN', 'cosmomc_theta', 'YHe', 'wa', 'cs2', 'H0', 'mnu', 'Alens',
-                                  'TCMB', 'ns', 'nrun', 'As', 'nt', 'r', 'w', 'omch2'})
+                                  'TCMB', 'ns', 'nrun', 'As', 'nt', 'r', 'w', 'omch2', 'max_zrei'})
         params2 = camb.get_valid_numerical_params(dark_energy_model='AxionEffectiveFluid')
         self.assertEqual(params2.difference(params), {'fde_zc', 'w_n', 'zc', 'theta_i'})
 
@@ -694,7 +694,6 @@ class CambTest(unittest.TestCase):
         monopole2 = s.make_frame_invariant(s.newtonian_gauge(monopole_source), 'Newtonian')
         Delta_c_N = s.make_frame_invariant(s.Delta_c, 'Newtonian')
         Delta_c_N2 = s.make_frame_invariant(s.synchronous_gauge(Delta_c_N), 'CDM')
-
         ev = data.get_time_evolution(ks, tau, ['delta_photon', s.Delta_g, Delta_c_N, Delta_c_N2,
                                                monopole_source, monopole2,
                                                temp_source, 'T_source'])

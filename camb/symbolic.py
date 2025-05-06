@@ -690,7 +690,8 @@ def camb_fortran(expr, name='camb_function', frame='CDM', expand=False):
         res = res.expand()
     res = res.collect([Symbol(str(x.func)) for x in
                        [k, sigma, opacity, visibility, dopacity, dvisibility, ddvisibility]])
-    res = sympy.fcode(res, source_format='free', standard=95, assign_to=name, contract=False)
+    res = sympy.fcode(res, source_format='free', standard=95, assign_to=name, contract=False,
+                      allow_unknown_functions=True)
     import textwrap
 
     if 'if ' not in res:
@@ -789,7 +790,6 @@ def compile_source_function_code(code_body, file_path='', compiler=None, fflags=
     if is_32_bit:
         fflags = "-m32 " + fflags
     if is_windows:
-        global _first_compile
         fflags += ' -static'
         if _first_compile:
             check_gfortran(msg=True)

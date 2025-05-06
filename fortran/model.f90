@@ -246,6 +246,7 @@
     !Set neutrino hierarchy in the approximate two-eigenstate model (treating two as exactly degenerate, and assuming non-relativistic),
     !or use degenerate mass approximation.
     !omnuh2 is the massive total neutrino density today, omnuh2_sterile is the component of that due to steriles
+    !omnuh2_sterile is interpreted as in the Planck parameter papers
     use MathUtils
     use constants
     class(CAMBparams), intent(inout) :: this
@@ -260,6 +261,7 @@
         return
     end if
     this%Nu_mass_eigenstates=0
+    this%share_delta_neff = .false.
     if (omnuh2 > omnuh2_sterile) then
         normal_frac =  (omnuh2-omnuh2_sterile)/omnuh2
         if (neutrino_hierarchy == neutrino_hierarchy_degenerate) then
